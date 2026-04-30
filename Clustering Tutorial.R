@@ -4,8 +4,8 @@ library(Seurat)
 setRepositories(ind = 1:3, addURLs = c('https://satijalab.r-universe.dev', 'https://bnprks.r-universe.dev/'))
 install.packages(c("BPCells", "presto", "glmGamPoi"))
 # Install the remotes package
-if (!requireNamespace("remotes", quietly = TRUE)) {
-  install.packages("remotes")}
+#if (!requireNamespace("remotes", quietly = TRUE)) {
+#  install.packages("remotes")}
 #remotes::install_github("satijalab/seurat-data", quiet = TRUE)
 #remotes::install_github("satijalab/azimuth", quiet = TRUE)
 #remotes::install_github("satijalab/seurat-wrappers", quiet = TRUE)
@@ -48,3 +48,10 @@ plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE) #label the top 
 plot1 + plot2
 
 #SCALE DATA (PREPROCESSING TO PCA)
+all.genes <- rownames(pbmc)
+pbmc <- ScaleData(pbmc, features = all.genes)
+pbmc <- ScaleData(pbmc, vars.to.regress = "percent.mt")
+
+#PCA 
+pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
+VizDimLoadings(pbmc, dims = 1:2, reduction = "pca")
