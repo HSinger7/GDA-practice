@@ -54,4 +54,48 @@ pbmc <- ScaleData(pbmc, vars.to.regress = "percent.mt")
 
 #PCA 
 pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
-VizDimLoadings(pbmc, dims = 1:2, reduction = "pca")
+
+VizDimLoadings(pbmc, dims = 1:2, reduction = "pca") #visualize the top genes associated with reduction components, PC_1 & PC_2
+DimPlot(pbmc, reduction = "pca") + NoLegend()
+DimHeatmap(pbmc, dims = 1, cells = 500, balanced = TRUE) #only show PC_1 
+DimHeatmap(pbmc, dims = 1:15, cells = 500, balanced = TRUE) #show them all 
+
+#alternative to Dim stuff (less computationally intensive)
+ElbowPlot(pbmc) #elbow is at ~9-10 so the majority of the true signal is in the first 10 PCs 
+
+#clustering - edo to xanoume ligo 
+pbmc <- FindNeighbors(pbmc, dims = 1:10) #constructs KNN graph based on Jaccard similarity for first 10 PCs 
+pbmc <- FindClusters(pbmc, resolution = 0.5) #resolution sets the granularity of downstream clustering, higher res = more clusters / if ~3K cells use 0.4-1.2 
+head(Idents(pbmc), 5) #Finds cluster IDs of the first 5 cells
+
+#Non-linear dimensional reduction - UMAP (see notes for limits)
+pbmc <- RunUMAP(pbmc, dims = 1:10)
+DimPlot(pbmc, reduction = "umap", label = TRUE) #label = TRUE puts the labels into the clusters / can remove
+
+#Finding differentially expressed features (markers)
+#find all markers in cluster 2 
+cluster2.markers <- FindMarkers(pbmc, ident.1 = 2) #ident.1 specifies which cluster to look at, e.g. 2 
+head(cluster2.markers, n = 5) 
+
+# find all markers distinguishing cluster 5 from clusters 0 and 3
+cluster5.markers <- FindMarkers(pbmc, ident.1 = 5, ident.2 = c(0, 3))
+head(cluster5.markers, n = 5)
+
+#find markers for every cluster compared to all remaining cells & report only the +ve
+pbmc.markers <- FindAllMarkers(pbmc, only.pos = TRUE) #takes a while bc calculates all clusters 
+pbmc.markers %>%
+  group_by(cluster) %>%
+  dplyr::filter(avg_log2FC > 1)
+
+VlnPlot(pbmc, features = c("MS4A1", "CD79A")) #expression probability across clusters 
+VlnPlot(pbmc, features = c("NKG7", "PF4"), layer = "counts", log = TRUE) #plot raw counts as well 
+FeaturePlot(pbmc, features = c("MS4A1", "GNLY", "CD3E", "CD14", "FCER1A", "FCGR3A", "LYZ", "PPBP","CD8A"))
+    #umap plots for these genes 
+
+pbmc.markers %>% #expression heatmap for given cells & features
+  group_by(cluster) %>%
+  dplyr::filter(avg_log2FC > 1) %>%
+  slice_head(n = 10) %>%
+  ungroup() -> top10
+DoHeatmap(pbmc, features = top10$gene) + NoLegend()
+
