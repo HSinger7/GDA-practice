@@ -4,7 +4,7 @@ setwd(workingDir)
 library(Seurat)
 
 #Section 1: Data importing  
-#data downloaded from GSE138852 and unzipped in terminal with "gunzip" and file name 
+#data downloaded from GSE138852 
 G_data = "GSE138852_counts.csv"
 G_data=read.csv(G_data, row.names = 1, check.names = FALSE)
 dim(G_data) #10850, 13214 damn that's a lot of data lol 
@@ -78,31 +78,42 @@ seurat_obj$bretigea_celltype <- recode(seurat_obj$bretigea_celltype,
 )
 
 #they also have hybrid and unidentified cells... decide if you want to add them and figure that out lol 
+#add meta data to compare with Grubman original umap
+covariates = read.csv("~/Desktop/Personal/For funsies/GDA-practice/GSE138852_covariates.csv")
+rownames (covariates) = covariates$X
+seurat_obj = AddMetaData(seurat_obj, metadata = covariates)
 
+#okay now compare them 
+library(patchwork)
 library(ggplot2)
+H_annotation = DimPlot(seurat_obj,
+                       group.by = "bretigea_celltype",
+                       label = TRUE,
+                       repel = TRUE) +
+  ggtitle("Heleni (BRETIGEA)") 
+
+# Grubman's original annotations
+G_annotation <- DimPlot(seurat_obj, 
+                        group.by = "oupSample.cellType",
+                        label = TRUE, 
+                        repel = TRUE) +
+  ggtitle("Grubman et al.")
+
+H_annotation + G_annotation #=<3
+
+#create UMAP for AD vs control 
 DimPlot(seurat_obj,
-        group.by = "bretigea_celltype",
-        label = TRUE,
-        repel = TRUE,
-        cols = c(
-          "Astrocyte" = "#FFB6C1",
-          "Microglia" = "#4169E1",
-          "Neuron" = "#FF0000",         
-          "Oligodendrocyte" = "#FFA500",
-          "OPC" = "#9370DB",             
-          "Endothelial" = "#8B4513" #,     
-          #"Hybrid" = "#000000", 
-          #"Unidentified" = "#808080"
-        )) +
-  ggtitle("Cell type annotation (BRETIGEA)")
-
-#Section 6: add metadata to see AD vs ctrl 
+        group.by = "oupSample.subclustCond",
+        label = FALSE, 
+        cols = c("AD" = "#7B2D8B", 
+                 "ct" = "#2D8B2D",
+                 "undetermined" = "#696969")) +
+  ggtitle("AD vs Control cell type composition") +
+  scale_color_manual(values = c(AD = "#7B2D8B", ct = "#2D8B2D", undetermined = "#696969"),
+                     labels = c(AD = "Alzheimer's Disease", ct = "Control", undetermined = "Unknown")
+  ) +
+  labs(color = "Condition") + 
+  theme(legend.title = element_text(face = "bold"))
 
 
 
-# DE within microglia for example
-micro_de <- FindMarkers(seurat_obj,
-                        ident.1 = "AD",
-                        ident.2 = "control",
-                        group.by = "condition",
-                        subset.ident = "microglia")
