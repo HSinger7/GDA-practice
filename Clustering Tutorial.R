@@ -1,5 +1,5 @@
 #SETUP
-install.packages('Seurat')
+#install.packages('Seurat')
 library(Seurat)
 setRepositories(ind = 1:3, addURLs = c('https://satijalab.r-universe.dev', 'https://bnprks.r-universe.dev/'))
 install.packages(c("BPCells", "presto", "glmGamPoi"))
@@ -87,6 +87,7 @@ pbmc.markers %>%
   group_by(cluster) %>%
   dplyr::filter(avg_log2FC > 1)
 
+#visualization 
 VlnPlot(pbmc, features = c("MS4A1", "CD79A")) #expression probability across clusters 
 VlnPlot(pbmc, features = c("NKG7", "PF4"), layer = "counts", log = TRUE) #plot raw counts as well 
 FeaturePlot(pbmc, features = c("MS4A1", "GNLY", "CD3E", "CD14", "FCER1A", "FCGR3A", "LYZ", "PPBP","CD8A"))
@@ -99,3 +100,13 @@ pbmc.markers %>% #expression heatmap for given cells & features
   ungroup() -> top10
 DoHeatmap(pbmc, features = top10$gene) + NoLegend()
 
+RidgePlot(pbmc, features = c("MS4A1", "CD79A")) 
+CellScatter(object = pbmc, cell1 = 'AAACATTGAGCTAC-1', cell2 = 'AAACATTGATCAGC-1') #need to specify cells obvi
+DotPlot(pbmc, features = c("MS4A1", "GNLY"))
+
+#assigning cell type identity to clusters 
+new.cluster.ids <- c("Naive CD4 T", "CD14+ Mono", "Memory CD4 T", "B", "CD8 T", "FCGR3A+ Mono",
+                     "NK", "DC", "Platelet")
+names(new.cluster.ids) <- levels(pbmc)
+pbmc <- RenameIdents(pbmc, new.cluster.ids)
+DimPlot(pbmc, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend()
