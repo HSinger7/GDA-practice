@@ -61,7 +61,7 @@ seurat_obj <- AddMetaData(seurat_obj,
 
 #on the UMAP, see which cell type is where  
 FeaturePlot(seurat_obj, 
-            features = c("ast", "end", "mic", "neu", "oli", "opc", ""),
+            features = c("ast", "end", "mic", "neu", "oli", "opc"),
             ncol = 3)
 
 cell_type_labels <- colnames(cell_types)[apply(cell_types, 
@@ -83,6 +83,7 @@ covariates = read.csv("~/Desktop/Personal/For funsies/GDA-practice/GSE138852_cov
 rownames (covariates) = covariates$X
 seurat_obj = AddMetaData(seurat_obj, metadata = covariates)
 
+#Figure 1d
 #okay now compare them 
 library(patchwork)
 library(ggplot2)
@@ -92,7 +93,7 @@ H_annotation = DimPlot(seurat_obj,
                        repel = TRUE) +
   ggtitle("Heleni (BRETIGEA)") 
 
-# Grubman's original annotations
+#Grubman's original annotations 
 G_annotation <- DimPlot(seurat_obj, 
                         group.by = "oupSample.cellType",
                         label = TRUE, 
@@ -101,6 +102,7 @@ G_annotation <- DimPlot(seurat_obj,
 
 H_annotation + G_annotation #=<3
 
+#Figure 1b 
 #create UMAP for AD vs control 
 DimPlot(seurat_obj,
         group.by = "oupSample.subclustCond",
@@ -115,5 +117,23 @@ DimPlot(seurat_obj,
   labs(color = "Condition") + 
   theme(legend.title = element_text(face = "bold"))
 
+#Figure 1c 
+#create UMAP for AD vs control separated by individual
+DimPlot(seurat_obj,
+       # group.by = "oupSample.subclustCond",
+        split.by = "X") + #need to fix 
+  ggtitle("AD vs Control cell type composition")
+  
+
+#Figure 2 - finding the subtypes of each cell cluster 
+all_clusters = DimPlot(seurat_obj, 
+                       group.by = "oupSample.subclustID",
+                       label = TRUE, 
+                       repel = TRUE) +
+  ggtitle("All cell clusters")
+
+astro_subclusters = DimPlot(seurat_obj, 
+                            group.by="oupSample.cellType", 
+                            label = FALSE)
 
 
