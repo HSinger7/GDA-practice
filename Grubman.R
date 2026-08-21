@@ -83,6 +83,13 @@ covariates = read.csv("~/Desktop/Personal/For funsies/GDA-practice/GSE138852_cov
 rownames (covariates) = covariates$X
 seurat_obj = AddMetaData(seurat_obj, metadata = covariates)
 
+#add the pair sample ids  wooooooow these guys didnt put individuals only pairs smh -_-
+barcodes = colnames(seurat_obj)
+sample_ids = sapply(strsplit(barcodes, "_"), function(x) paste(tail(x, 2), collapse = "_"))
+seurat_obj$sample_ids = sample_ids
+#unique(seurat_obj$sample_ids)
+
+#okay, figures time! 
 #Figure 1d
 #okay now compare them 
 library(patchwork)
@@ -112,28 +119,67 @@ DimPlot(seurat_obj,
                  "undetermined" = "#696969")) +
   ggtitle("AD vs Control cell type composition") +
   scale_color_manual(values = c(AD = "#7B2D8B", ct = "#2D8B2D", undetermined = "#696969"),
-                     labels = c(AD = "Alzheimer's Disease", ct = "Control", undetermined = "Unknown")
+                     labels = c(AD = "Alzheimer's Disease", ct = "Control", undetermined = "Undetermined")
   ) +
   labs(color = "Condition") + 
   theme(legend.title = element_text(face = "bold"))
 
 #Figure 1c 
-#create UMAP for AD vs control separated by individual
+#create UMAP for AD vs control separated by pair (</3)
 DimPlot(seurat_obj,
-       # group.by = "oupSample.subclustCond",
-        split.by = "X") + #need to fix 
-  ggtitle("AD vs Control cell type composition")
-  
+        group.by = "sample_ids", 
+        cols = c("AD1_AD2" = "#E41A1C",
+                 "AD3_AD4" = "#FF7F00", 
+                 "AD5_AD6" = "#C77CFF",
+                 "Ct1_Ct2" = "#4DAF4A",
+                 "Ct3_Ct4" = "#377EB8",
+                 "Ct5_Ct6" = "#7B2D8B"),
+        label = FALSE) +  
+  ggtitle("Single nuclei colored by pair")
 
 #Figure 2 - finding the subtypes of each cell cluster 
 all_clusters = DimPlot(seurat_obj, 
                        group.by = "oupSample.subclustID",
-                       label = TRUE, 
-                       repel = TRUE) +
+                       label = FALSE) + 
   ggtitle("All cell clusters")
+all_clusters
 
-astro_subclusters = DimPlot(seurat_obj, 
-                            group.by="oupSample.cellType", 
-                            label = FALSE)
+#Figure 2a: astrocytes  
+astrocyte_clusters = c("a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8")
+seurat_obj$astrocytes_only = ifelse(
+  seurat_obj$oupSample.subclustID %in% astrocyte_clusters,
+  seurat_obj$oupSample.subclustID,
+  "other")
 
+DimPlot(seurat_obj,
+        group.by = "astrocytes_only",
+        cols = c("a1" = "#900c3f",
+                 "a2" = "#182b55",
+                 "a3" = "#5f4e94",
+                 "a4" = "#a291c7",
+                 "a5" = "#82cbec",
+                 "a6" = "#d94f21",
+                 "a7" = "#febd2b",
+                 "a8" = "#9aab4b",
+                 "other" = "#D3D3D3")) +
+  ggtitle("Astrocytes")
+
+#Figure 2b: neurons
+neuron_clusters = c("n1", "n2", "n3", "n4", "n5", "n6")
+seurat_obj$neurons_only = ifelse(
+  seurat_obj$oupSample.subclustID %in% neuron_clusters,
+  seurat_obj$oupSample.subclustID,
+  "other"
+)
+
+DimPlot(seurat_obj,
+        group.by = "neurons_only",
+        cols = c("n1" = "#c45335",
+                 "n2" = "#cc7a3d",
+                 "n3" = "#e6c994",
+                 "n4" = "#fbf2c4",
+                 "n5" = "#74a892",
+                 "n6" = "#008585",
+                 "other" = "#D3D3D3")) +
+  ggtitle("Neurons")
 
